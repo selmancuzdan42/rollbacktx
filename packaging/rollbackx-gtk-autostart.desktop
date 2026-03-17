@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=RollbackX
+Name[tr]=RollbackX
+Comment=Sistem anlık görüntüsü yöneticisi
+Comment[tr]=Sistem anlık görüntüsü yöneticisi
+Exec=rollbackx-gtk --arka-plan
+Icon=camera-photo-symbolic
+Terminal=false
+Hidden=false
+X-GNOME-Autostart-enabled=true
+X-XFCE-Autostart-enabled=true

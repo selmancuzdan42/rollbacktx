@@ -1,0 +1,64 @@
+[package]
+name    = "rollbackx-cli"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "RollbackX CLI — Pardus Linux sistem anlık görüntü yöneticisi"
+default-run = "rollbackx"
+
+[[bin]]
+name = "rollbackx"
+path = "src/main.rs"
+
+[package.metadata.deb]
+name            = "rollbackx"
+revision        = "2"
+maintainer      = "Selman F. CÜZDAN <selmanfarisicuzdan@gmail.com>"
+copyright       = "2026 Selman F. CÜZDAN"
+license-file    = ["LICENSE", "2"]
+depends         = "grub-common, rsync, libgtk-4-1, libadwaita-1-0, gir1.2-polkit-1.0"
+recommends      = "btrfs-progs (>= 5.0) | lvm2"
+section         = "admin"
+priority        = "optional"
+maintainer-scripts = "../../packaging/debian/"
+
+assets = [
+  # CLI binary
+  ["../../target/release/rollbackx",           "usr/bin/rollbackx",                         "755"],
+  # GTK binary
+  ["../../target/release/rollbackx-gtk",       "usr/bin/rollbackx-gtk",                     "755"],
+  # GRUB script
+  ["../../packaging/grub.d/80_rollbackx",      "etc/grub.d/80_rollbackx",                   "755"],
+  # Systemd servisleri
+  ["../../packaging/systemd/rollbackx-restore.service",  "lib/systemd/system/rollbackx-restore.service",  "644"],
+  ["../../packaging/systemd/rollbackx-cmdline.service",  "lib/systemd/system/rollbackx-cmdline.service",  "644"],
+  ["../../packaging/systemd/rollbackx-schedule.timer",        "lib/systemd/system/rollbackx-schedule.timer",        "644"],
+  ["../../packaging/systemd/rollbackx-schedule.service",      "lib/systemd/system/rollbackx-schedule.service",      "644"],
+  ["../../packaging/systemd/rollbackx-auto-restore.service",  "lib/systemd/system/rollbackx-auto-restore.service",  "644"],
+  # Shell scriptleri
+  ["../../packaging/systemd/do-restore.sh",     "usr/lib/rollbackx/do-restore.sh",            "755"],
+  ["../../packaging/systemd/cmdline-restore.sh", "usr/lib/rollbackx/cmdline-restore.sh",       "755"],
+  ["../../packaging/systemd/auto-restore.sh",    "usr/lib/rollbackx/auto-restore.sh",          "755"],
+  # APT hook şablonu (aktif değil; rollbackx ayarlar apt-hook aç ile etkinleştirilir)
+  ["../../packaging/apt-hook/80rollbackx",     "usr/share/rollbackx/apt-hook/80rollbackx",  "644"],
+  # Polkit policy + kurallar
+  ["../../packaging/polkit/org.rollbackx.policy", "usr/share/polkit-1/actions/org.rollbackx.policy", "644"],
+  ["../../packaging/polkit/org.rollbackx.rules",  "usr/share/polkit-1/rules.d/org.rollbackx.rules",  "644"],
+  # Desktop entry (uygulama menüsü)
+  ["../../packaging/rollbackx.desktop",        "usr/share/applications/rollbackx.desktop",  "644"],
+  # GTK otomatik başlatma
+  ["../../packaging/rollbackx-gtk-autostart.desktop", "etc/xdg/autostart/rollbackx-gtk.desktop", "644"],
+  # .rxsnap MIME type
+  ["../../packaging/rollbackx-mime.xml", "usr/share/mime/packages/rollbackx.xml", "644"],
+]
+
+[dependencies]
+rollbackx-core = { path = "../rollbackx-core" }
+clap           = { workspace = true }
+colored        = { workspace = true }
+tabled         = { workspace = true }
+serde_json     = { workspace = true }
+anyhow         = { workspace = true }
+chrono         = { workspace = true }
+tempfile       = { workspace = true }

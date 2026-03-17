@@ -1,0 +1,24 @@
+/* RollbackX polkit kuralları
+ * /usr/share/polkit-1/rules.d/org.rollbackx.rules
+ *
+ * Tüm rollbackx işlemleri yönetici (öğretmen) şifresi gerektirir.
+ * Öğrenci UI'dan sadece listeyi görüntüler, işlem yapamaz.
+ */
+
+polkit.addRule(function(action, subject) {
+    if (action.id !== "org.freedesktop.policykit.exec") {
+        return undefined;
+    }
+
+    var cmd = action.lookup("command_line") || "";
+    if (cmd.indexOf("rollbackx") === -1) {
+        return undefined;
+    }
+
+    // Aktif yerel oturumda yönetici şifresi (session boyu hatırla)
+    if (subject.active && subject.local) {
+        return polkit.Result.AUTH_ADMIN_KEEP;
+    }
+
+    return polkit.Result.AUTH_ADMIN;
+});

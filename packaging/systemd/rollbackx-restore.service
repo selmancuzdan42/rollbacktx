@@ -1,0 +1,16 @@
+[Unit]
+Description=RollbackX — Sistem Anlık Görüntüsü Geri Yükleme
+DefaultDependencies=no
+After=local-fs.target rollbackx-cmdline.service
+Before=basic.target sysinit.target
+ConditionPathExists=/var/lib/rollbackx/pending-restore.conf
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/rollbackx/do-restore.sh
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=sysinit.target

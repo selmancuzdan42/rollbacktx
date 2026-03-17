@@ -1,0 +1,16 @@
+[Unit]
+Description=RollbackX — GRUB'dan Gelen Restore Parametresini İşle
+DefaultDependencies=no
+After=local-fs.target
+Before=rollbackx-restore.service basic.target sysinit.target
+ConditionKernelCommandLine=rollbackx.restore_id
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/rollbackx/cmdline-restore.sh
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=sysinit.target

@@ -1,0 +1,17 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rollbackx-web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      # .deb release'leri buraya koy → otomatik servis eder
+      - ./releases:/usr/share/nginx/html/releases:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

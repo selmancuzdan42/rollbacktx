@@ -1,0 +1,15 @@
+[Unit]
+Description=RollbackX Zamanlanmış Geri Yükleme Zamanlayıcı
+Documentation=https://rollbackx.example.com
+
+[Timer]
+# Her gün 03:00'da kontrol et
+OnCalendar=*-*-* 03:00:00
+# Sistem kapalıyken geçilen zamanı telafi et
+Persistent=true
+# ±15 dakika rastgele sapma (sistem yükünü dağıtmak için)
+RandomizedDelaySec=15m
+Unit=rollbackx-schedule.service
+
+[Install]
+WantedBy=timers.target

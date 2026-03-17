@@ -1,0 +1,17 @@
+# Rust
+target/
+Cargo.lock
+
+# Geçici dosyalar
+*.tmp
+*.log
+*.swp
+*.swo
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# CLAUDE.md (yerel geliştirme notu)
+CLAUDE.md

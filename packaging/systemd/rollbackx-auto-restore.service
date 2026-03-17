@@ -1,0 +1,16 @@
+[Unit]
+Description=RollbackX — Önyükleme Otomatik Geri Yükleme
+DefaultDependencies=no
+After=local-fs.target
+Before=sysinit.target
+ConditionPathExists=/var/lib/rollbackx/auto-restore.conf
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/rollbackx/auto-restore.sh
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=sysinit.target

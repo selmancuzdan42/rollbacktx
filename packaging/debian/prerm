@@ -1,0 +1,35 @@
+#!/bin/sh
+# RollbackX prerm — kaldırma öncesi temizlik
+set -e
+
+case "$1" in
+    remove|purge)
+        # Systemd servislerini devre dışı bırak
+        if command -v systemctl >/dev/null 2>&1; then
+            systemctl stop    rollbackx-schedule.timer  2>/dev/null || true
+            systemctl disable rollbackx-schedule.timer  2>/dev/null || true
+            systemctl disable rollbackx-restore.service 2>/dev/null || true
+            systemctl disable rollbackx-cmdline.service 2>/dev/null || true
+            systemctl daemon-reload                     2>/dev/null || true
+        fi
+
+        # GRUB script'ini kaldır ve GRUB'u güncelle
+        rm -f /etc/grub.d/80_rollbackx
+        if command -v update-grub >/dev/null 2>&1; then
+            update-grub 2>/dev/null || true
+        fi
+
+        echo ""
+        echo "RollbackX kaldırıldı."
+        echo "Snapshot verileri /var/lib/rollbackx/ dizininde korundu."
+        echo "Silmek için: sudo rm -rf /var/lib/rollbackx/"
+        ;;
+    upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+        ;;
+    *)
+        echo "prerm: bilinmeyen argüman '$1'" >&2
+        exit 1
+        ;;
+esac
+
+exit 0

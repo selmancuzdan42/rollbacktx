@@ -1,0 +1,6 @@
+// APT hook — paket kurulumundan önce otomatik snapshot al
+// Hedef: /etc/apt/apt.conf.d/80rollbackx
+
+DPkg::Pre-Invoke {
+    "rollbackx snapshot create 'otomatik:apt' --sessiz || true";
+};

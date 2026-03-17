@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+
+<policyconfig>
+  <vendor>RollbackX</vendor>
+  <vendor_url>https://github.com/rollbackx/rollbackx</vendor_url>
+  <icon_name>camera-photo-symbolic</icon_name>
+
+  <!--
+    Geri yükleme: öğrenciler kendi şifresiyle yapabilir (auth_self).
+    Aktif yerel oturumda şifre bir süre hatırlanır (auth_self_keep).
+  -->
+  <action id="org.rollbackx.snapshot.restore">
+    <description>Sistemi Snapshot'a Geri Yükle</description>
+    <message>Sistemi geri yüklemek için yönetici parolası gereklidir.</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/rollbackx</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
+  </action>
+
+  <!--
+    Yönetim işlemleri: yalnızca yönetici (öğretmen) yapabilir.
+  -->
+  <action id="org.rollbackx.snapshot.create">
+    <description>Sistem Snapshot'ı Oluştur</description>
+    <message>Yeni snapshot oluşturmak için yönetici parolası gereklidir.</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/rollbackx</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
+  </action>
+
+  <action id="org.rollbackx.snapshot.delete">
+    <description>Snapshot'ı Sil</description>
+    <message>Snapshot silmek için yönetici parolası gereklidir.</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/rollbackx</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
+  </action>
+
+  <action id="org.rollbackx.manage">
+    <description>RollbackX Yönetimi</description>
+    <message>Bu işlem için yönetici parolası gereklidir.</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/bin/rollbackx</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
+  </action>
+
+</policyconfig>

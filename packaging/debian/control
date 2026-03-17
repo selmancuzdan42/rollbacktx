@@ -1,0 +1,18 @@
+Package: rollbackx
+Version: 1.0.0
+Section: admin
+Priority: optional
+Architecture: amd64
+Maintainer: Selman F. CÜZDAN <selmanfarisicuzdan@gmail.com>
+Homepage: https://github.com/rollbackx/rollbackx
+Depends: grub-common, rsync
+Recommends: btrfs-progs (>= 5.0) | lvm2, libgtk-4-1, libadwaita-1-0, libayatana-appindicator3-1
+Description: Pardus Linux sistem anlık görüntüsü yöneticisi
+ RollbackX, Pardus/Debian Linux için Btrfs, LVM Thin ve Rsync tabanlı
+ sistem anlık görüntüsü (snapshot) yöneticisidir. GRUB menüsünden
+ eski sistem durumlarına kolayca geri dönmeyi sağlar.
+ .
+ Desteklenen backend'ler:
+  * Btrfs subvolume snapshot
+  * LVM Thin snapshot
+  * Rsync (evrensel — ext4 dahil tüm dosya sistemleri)

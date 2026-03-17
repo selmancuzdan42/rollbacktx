@@ -1,0 +1,22 @@
+[package]
+name    = "rollbackx-gtk"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "RollbackX GTK4 grafik arayüzü"
+
+[[bin]]
+name = "rollbackx-gtk"
+path = "src/main.rs"
+
+[dependencies]
+rollbackx-core = { path = "../rollbackx-core" }
+gtk4           = { version = "0.9", features = ["v4_10"] }
+libadwaita     = { version = "0.7", features = ["v1_5"] }
+glib           = "0.20"
+gio            = "0.20"
+serde_json     = { workspace = true }
+anyhow         = { workspace = true }
+chrono         = { workspace = true }
+ksni           = "0.2"

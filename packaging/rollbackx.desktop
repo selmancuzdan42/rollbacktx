@@ -1,0 +1,15 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=RollbackX
+Name[tr]=RollbackX
+GenericName=Sistem Snapshot Yöneticisi
+GenericName[tr]=Sistem Anlık Görüntü Yöneticisi
+Comment=Btrfs ve LVM Thin sistem anlık görüntüsü yöneticisi
+Comment[tr]=Btrfs ve LVM Thin sistem anlık görüntüsü yöneticisi
+Exec=rollbackx-gtk
+Icon=camera-photo-symbolic
+Terminal=false
+Categories=System;Settings;
+Keywords=snapshot;yedek;backup;btrfs;lvm;geri yükleme;restore;
+StartupNotify=true

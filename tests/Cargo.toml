@@ -1,0 +1,18 @@
+[package]
+name    = "rollbackx-tests"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+rollbackx-core = { path = "../crates/rollbackx-core" }
+tempfile       = "3"
+chrono         = { version = "0.4", features = ["clock"] }
+
+[[test]]
+name = "btrfs_snapshot_test"
+path = "integration/btrfs_snapshot_test.rs"
+
+[[test]]
+name = "lvm_snapshot_test"
+path = "integration/lvm_snapshot_test.rs"

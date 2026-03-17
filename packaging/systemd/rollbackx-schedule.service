@@ -1,0 +1,16 @@
+[Unit]
+Description=RollbackX Zamanlanmış Geri Yükleme Kontrol
+After=network.target
+ConditionPathExists=/var/lib/rollbackx/schedule.json
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/rollbackx zamanlayici kontrol
+# Hata olursa sessizce geç (kullanıcı zamanlaması yoksa 0 dönecek)
+SuccessExitStatus=0
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=rollbackx-schedule
+
+[Install]
+WantedBy=multi-user.target

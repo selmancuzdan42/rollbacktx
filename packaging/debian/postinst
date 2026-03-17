@@ -1,0 +1,88 @@
+#!/bin/sh
+# RollbackX postinst — kurulum sonrası işlemler
+set -e
+
+case "$1" in
+    configure)
+        # Veri dizinini oluştur — herkes okuyabilir (öğrenci snapshot listesini görebilir)
+        mkdir -p /var/lib/rollbackx
+        chmod 755 /var/lib/rollbackx
+
+        # Boş DB dosyası oluştur (yoksa)
+        if [ ! -f /var/lib/rollbackx/snapshots.json ]; then
+            echo '[]' > /var/lib/rollbackx/snapshots.json
+        fi
+        chmod 644 /var/lib/rollbackx/snapshots.json
+
+        # Polkit kuralı kur (argümana göre auth seviyesi)
+        if [ -f /usr/share/polkit-1/rules.d/org.rollbackx.rules ]; then
+            chmod 644 /usr/share/polkit-1/rules.d/org.rollbackx.rules
+        fi
+
+        # GRUB script çalıştırılabilir yap
+        chmod 755 /etc/grub.d/80_rollbackx 2>/dev/null || true
+
+        # Restore scriptlerini çalıştırılabilir yap
+        chmod 755 /usr/lib/rollbackx/do-restore.sh      2>/dev/null || true
+        chmod 755 /usr/lib/rollbackx/cmdline-restore.sh 2>/dev/null || true
+
+        # Restore scriptlerini çalıştırılabilir yap
+        chmod 755 /usr/lib/rollbackx/auto-restore.sh        2>/dev/null || true
+
+        # Systemd servislerini etkinleştir
+        if command -v systemctl >/dev/null 2>&1; then
+            systemctl daemon-reload                              2>/dev/null || true
+            systemctl enable rollbackx-restore.service          2>/dev/null || true
+            systemctl enable rollbackx-cmdline.service          2>/dev/null || true
+            systemctl enable rollbackx-auto-restore.service     2>/dev/null || true
+            systemctl enable rollbackx-schedule.timer           2>/dev/null || true
+            systemctl start  rollbackx-schedule.timer           2>/dev/null || true
+        fi
+
+        # GRUB'u güncelle
+        if command -v update-grub >/dev/null 2>&1; then
+            update-grub 2>/dev/null || true
+        fi
+
+        # .rxsnap MIME type kaydı
+        if command -v update-mime-database >/dev/null 2>&1; then
+            update-mime-database /usr/share/mime 2>/dev/null || true
+        fi
+
+        # APT hook — kullanıcıya sor (sadece interaktif terminalde)
+        APT_HOOK_SRC="/usr/share/rollbackx/apt-hook/80rollbackx"
+        APT_HOOK_DST="/etc/apt/apt.conf.d/80rollbackx"
+        if [ -t 0 ] && [ ! -f "$APT_HOOK_DST" ]; then
+            echo ""
+            printf "  APT kurulumlarından önce otomatik snapshot alınsın mı? [E/h] "
+            read -r apt_cevap
+            case "$apt_cevap" in
+                [Hh]*)
+                    echo "  APT hook devre dışı bırakıldı."
+                    echo "  İstediğinizde: rollbackx ayarlar apt-hook aç"
+                    ;;
+                *)
+                    cp "$APT_HOOK_SRC" "$APT_HOOK_DST"
+                    echo "  APT hook etkinleştirildi."
+                    ;;
+            esac
+        elif [ ! -f "$APT_HOOK_DST" ]; then
+            # Non-interaktif kurulum: varsayılan olarak kapalı
+            echo "  APT hook devre dışı (non-interaktif kurulum)."
+            echo "  Etkinleştirmek için: rollbackx ayarlar apt-hook aç"
+        fi
+
+        echo ""
+        echo "RollbackX kuruldu."
+        echo "  CLI : rollbackx --help"
+        echo "  GUI : rollbackx-gtk"
+        ;;
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+    *)
+        echo "postinst: bilinmeyen argüman '$1'" >&2
+        exit 1
+        ;;
+esac
+
+exit 0

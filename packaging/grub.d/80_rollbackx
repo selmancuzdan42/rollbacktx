@@ -1,0 +1,60 @@
+#!/bin/sh
+# /etc/grub.d/80_rollbackx — RollbackX snapshot boot menüsü
+
+ROLLBACKX_BIN="/usr/bin/rollbackx"
+[ -x "$ROLLBACKX_BIN" ] || exit 0
+
+# Mevcut kernel ve initrd'yi bul (en yenisi)
+KERNEL=$(ls /boot/vmlinuz-* 2>/dev/null | sort -V | tail -1)
+INITRD=$(ls /boot/initrd.img-* 2>/dev/null | sort -V | tail -1)
+[ -z "$KERNEL" ] && exit 0
+
+# Root FS UUID — birden fazla yöntem dene
+ROOT_UUID=""
+if command -v findmnt >/dev/null 2>&1; then
+    ROOT_UUID=$(findmnt -n -o UUID / 2>/dev/null)
+fi
+if [ -z "$ROOT_UUID" ] && command -v grub-probe >/dev/null 2>&1; then
+    ROOT_UUID=$(grub-probe --target=fs_uuid / 2>/dev/null)
+fi
+[ -z "$ROOT_UUID" ] && exit 0
+
+# Snapshot listesini al
+SNAPS=$("$ROLLBACKX_BIN" snapshot list --json 2>/dev/null)
+[ -z "$SNAPS" ] && exit 0
+[ "$SNAPS" = "[]" ] && exit 0
+
+# Python3 ile parse et — alanları | ile ayır, boşluk sorunu yaşanmasın
+ENTRIES=$(echo "$SNAPS" | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+for s in data:
+    sid     = str(s['id'])
+    name    = s['name'].replace('|', '-')
+    date    = s.get('created_at','')[:16].replace('T',' ')
+    backend = s.get('backend','Rsync')
+    print('|'.join([sid, name, date, backend]))
+" 2>/dev/null)
+
+[ -z "$ENTRIES" ] && exit 0
+
+cat << 'GRUB_HEADER'
+submenu 'RollbackX -- Anlık Görüntüler' {
+GRUB_HEADER
+
+echo "$ENTRIES" | while IFS="|" read -r SNAP_ID SNAP_NAME SNAP_DATE SNAP_BACKEND; do
+    [ -z "$SNAP_ID" ] && continue
+    cat << EOF
+    menuentry 'RollbackX: ${SNAP_NAME} (${SNAP_DATE}) [${SNAP_BACKEND}]' --class rollbackx {
+        insmod part_gpt
+        insmod ext2
+        insmod btrfs
+        search --no-floppy --fs-uuid --set=root ${ROOT_UUID}
+        echo 'RollbackX: Geri yukleniyor -- ${SNAP_NAME}'
+        linux   ${KERNEL} root=UUID=${ROOT_UUID} ro quiet splash rollbackx.restore_id=${SNAP_ID}
+        initrd  ${INITRD}
+    }
+EOF
+done
+
+echo "}"
