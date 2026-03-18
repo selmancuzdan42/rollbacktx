@@ -26,39 +26,45 @@ fi
 [ -z "$ROOT_UUID" ] && exit 0
 
 # JSON'dan snapshot bilgilerini parse et (python3/jq'suz)
-# Pretty-printed JSON'dan id, name, created_at, backend alanlarını çek
+# Pretty-printed JSON: her alan ayrı satırda.
+# "id" alanı her objenin ilk alanı — yeni "id" görülünce
+# önceki snapshot emit edilir. trigger:{} gibi iç objeler sorun olmaz.
 parse_snapshots() {
     CUR_ID=""
     CUR_NAME=""
     CUR_DATE=""
     CUR_BACKEND=""
 
+    emit() {
+        if [ -n "$CUR_ID" ] && [ -n "$CUR_NAME" ]; then
+            echo "${CUR_ID}|${CUR_NAME}|${CUR_DATE}|${CUR_BACKEND}"
+        fi
+    }
+
     while IFS= read -r line; do
         case "$line" in
-            *'"id"'*)
+            *'"id"'*:*)
+                # Yeni obje başlıyor — öncekini yazdır
+                emit
                 CUR_ID=$(echo "$line" | sed 's/[^0-9]//g')
-                ;;
-            *'"name"'*)
-                CUR_NAME=$(echo "$line" | sed 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
-                ;;
-            *'"created_at"'*)
-                CUR_DATE=$(echo "$line" | sed 's/.*"created_at"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/' | cut -c1-16 | tr 'T' ' ')
-                ;;
-            *'"backend"'*)
-                CUR_BACKEND=$(echo "$line" | sed 's/.*"backend"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
-                ;;
-            *'}'*)
-                # Obje sonu — bu snapshot'ı yazdır
-                if [ -n "$CUR_ID" ] && [ -n "$CUR_NAME" ]; then
-                    echo "${CUR_ID}|${CUR_NAME}|${CUR_DATE}|${CUR_BACKEND}"
-                fi
-                CUR_ID=""
                 CUR_NAME=""
                 CUR_DATE=""
                 CUR_BACKEND=""
                 ;;
+            *'"name"'*:*)
+                CUR_NAME=$(echo "$line" | sed 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+                ;;
+            *'"created_at"'*:*)
+                CUR_DATE=$(echo "$line" | sed 's/.*"created_at"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/' | cut -c1-16 | tr 'T' ' ')
+                ;;
+            *'"backend"'*:*)
+                CUR_BACKEND=$(echo "$line" | sed 's/.*"backend"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+                ;;
         esac
     done < "$DB"
+
+    # Son objeyi de yazdır
+    emit
 }
 
 ENTRIES=$(parse_snapshots)
