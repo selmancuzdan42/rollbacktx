@@ -220,8 +220,27 @@ if [ $RESULT -eq 0 ] || [ $RESULT -eq 24 ]; then
     printf "   ${GREEN}✓ Geri yukleme basarili!${RESET}\n"
     log "Geri yukleme BASARILI."
 
-    # GRUB menusunu guncelle — 80_rollbackx artik pure shell,
-    # python3/rollbackx binary gerektirmiyor, emergency ortamda da calisir.
+    # Exclude edilen RollbackX dosyalari eksikse snapshot'tan geri kopyala.
+    # /etc silinmisse rsync exclude yuzunden bu dosyalar geri gelmez.
+    ROLLBACKX_FILES="
+        /etc/grub.d/80_rollbackx
+        /etc/apt/apt.conf.d/80rollbackx
+        /usr/share/applications/rollbackx.desktop
+        /etc/xdg/autostart/rollbackx-gtk.desktop
+        /usr/share/polkit-1/actions/org.rollbackx.policy
+        /usr/share/icons/hicolor/scalable/apps/rollbackx.svg
+    "
+    for f in $ROLLBACKX_FILES; do
+        if [ ! -f "$f" ] && [ -f "${SNAP_PATH}${f}" ]; then
+            mkdir -p "$(dirname "$f")"
+            cp "${SNAP_PATH}${f}" "$f"
+            log "Eksik dosya snapshot'tan geri yuklendi: $f"
+        fi
+    done
+    # 80_rollbackx calistirilabilir olmali
+    [ -f /etc/grub.d/80_rollbackx ] && chmod 755 /etc/grub.d/80_rollbackx
+
+    # GRUB menusunu guncelle
     printf "   ${DIM}GRUB menusu guncelleniyor...${RESET}\n"
     update-grub >> "$LOG" 2>&1 || true
     log "GRUB guncellendi."

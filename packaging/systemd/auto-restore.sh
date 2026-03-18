@@ -49,6 +49,19 @@ rsync -aHAXx --delete \
 
 log "Otomatik geri yükleme tamamlandı."
 
+# Exclude edilen RollbackX dosyaları eksikse snapshot'tan geri kopyala
+for f in /etc/grub.d/80_rollbackx /etc/apt/apt.conf.d/80rollbackx \
+         /usr/share/applications/rollbackx.desktop /etc/xdg/autostart/rollbackx-gtk.desktop \
+         /usr/share/polkit-1/actions/org.rollbackx.policy \
+         /usr/share/icons/hicolor/scalable/apps/rollbackx.svg; do
+    if [ ! -f "$f" ] && [ -f "${SNAP_PATH}${f}" ]; then
+        mkdir -p "$(dirname "$f")"
+        cp "${SNAP_PATH}${f}" "$f"
+        log "Eksik dosya geri yüklendi: $f"
+    fi
+done
+[ -f /etc/grub.d/80_rollbackx ] && chmod 755 /etc/grub.d/80_rollbackx
+
 # GRUB menüsünü güncelle — yeni snapshot'lar görünsün
 update-grub >> "$LOG" 2>&1 || true
 log "GRUB güncellendi. Boot devam ediyor."
