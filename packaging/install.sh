@@ -47,6 +47,8 @@ install -Dm755 "$SCRIPT_DIR/systemd/do-restore.sh" \
     /usr/lib/rollbackx/do-restore.sh
 install -Dm755 "$SCRIPT_DIR/systemd/auto-restore.sh" \
     /usr/lib/rollbackx/auto-restore.sh
+install -Dm755 "$SCRIPT_DIR/systemd/emergency-restore.sh" \
+    /usr/lib/rollbackx/emergency-restore.sh
 install -Dm644 "$SCRIPT_DIR/systemd/rollbackx-cmdline.service" \
     /lib/systemd/system/rollbackx-cmdline.service
 install -Dm644 "$SCRIPT_DIR/systemd/rollbackx-restore.service" \

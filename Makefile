@@ -6,7 +6,7 @@ PREFIX        ?= /usr/local
 DESTDIR       ?=
 
 # .deb paket ayarları
-DEB_VERSION   := 1.0.1
+DEB_VERSION   := 1.0.2
 DEB_ARCH      := amd64
 DEB_PKGNAME   := rollbackx_$(DEB_VERSION)_$(DEB_ARCH)
 DEB_STAGEDIR  := /tmp/$(DEB_PKGNAME)
@@ -49,6 +49,8 @@ install: release
 		$(DESTDIR)/usr/lib/rollbackx/do-restore.sh
 	install -Dm755 packaging/systemd/auto-restore.sh \
 		$(DESTDIR)/usr/lib/rollbackx/auto-restore.sh
+	install -Dm755 packaging/systemd/emergency-restore.sh \
+		$(DESTDIR)/usr/lib/rollbackx/emergency-restore.sh
 	install -Dm644 packaging/systemd/rollbackx-cmdline.service \
 		$(DESTDIR)/lib/systemd/system/rollbackx-cmdline.service
 	install -Dm644 packaging/systemd/rollbackx-restore.service \
@@ -119,6 +121,7 @@ deb:
 	install -m755 packaging/systemd/do-restore.sh      $(DEB_STAGEDIR)/usr/lib/rollbackx/do-restore.sh
 	install -m755 packaging/systemd/cmdline-restore.sh $(DEB_STAGEDIR)/usr/lib/rollbackx/cmdline-restore.sh
 	install -m755 packaging/systemd/auto-restore.sh    $(DEB_STAGEDIR)/usr/lib/rollbackx/auto-restore.sh
+	install -m755 packaging/systemd/emergency-restore.sh $(DEB_STAGEDIR)/usr/lib/rollbackx/emergency-restore.sh
 
 	# GRUB script
 	install -m755 packaging/grub.d/80_rollbackx $(DEB_STAGEDIR)/etc/grub.d/80_rollbackx

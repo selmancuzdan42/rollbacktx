@@ -1,6 +1,9 @@
 # Rust
 target/
 
+# Build çıktıları
+*.deb
+
 # Geçici dosyalar
 *.tmp
 *.log

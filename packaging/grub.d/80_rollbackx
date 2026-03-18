@@ -51,7 +51,7 @@ echo "$ENTRIES" | while IFS="|" read -r SNAP_ID SNAP_NAME SNAP_DATE SNAP_BACKEND
         insmod btrfs
         search --no-floppy --fs-uuid --set=root ${ROOT_UUID}
         echo 'RollbackX: Geri yukleniyor -- ${SNAP_NAME}'
-        linux   ${KERNEL} root=UUID=${ROOT_UUID} ro quiet splash rollbackx.restore_id=${SNAP_ID}
+        linux   ${KERNEL} root=UUID=${ROOT_UUID} rw rollbackx.restore_id=${SNAP_ID} init=/usr/lib/rollbackx/emergency-restore.sh
         initrd  ${INITRD}
     }
 EOF

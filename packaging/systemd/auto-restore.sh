@@ -37,10 +37,14 @@ rsync -aHAXx --delete \
     --exclude='/usr/bin/rollbackx' \
     --exclude='/usr/bin/rollbackx-gtk' \
     --exclude='/usr/lib/rollbackx/' \
-    --exclude='/lib/systemd/system/rollbackx*.service' \
+    --exclude='/lib/systemd/system/rollbackx*' \
     --exclude='/usr/share/polkit-1/actions/org.rollbackx.policy' \
     --exclude='/usr/share/polkit-1/rules.d/org.rollbackx.rules' \
     --exclude='/etc/apt/apt.conf.d/80rollbackx' \
+    --exclude='/etc/grub.d/80_rollbackx' \
+    --exclude='/usr/share/applications/rollbackx.desktop' \
+    --exclude='/etc/xdg/autostart/rollbackx-gtk.desktop' \
+    --exclude='/usr/share/icons/hicolor/scalable/apps/rollbackx.svg' \
     "$SNAP_PATH/" / >> "$LOG" 2>&1
 
 log "Otomatik geri yükleme tamamlandı. Boot devam ediyor."
