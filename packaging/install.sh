@@ -45,10 +45,18 @@ install -Dm755 "$SCRIPT_DIR/systemd/cmdline-restore.sh" \
     /usr/lib/rollbackx/cmdline-restore.sh
 install -Dm755 "$SCRIPT_DIR/systemd/do-restore.sh" \
     /usr/lib/rollbackx/do-restore.sh
+install -Dm755 "$SCRIPT_DIR/systemd/auto-restore.sh" \
+    /usr/lib/rollbackx/auto-restore.sh
 install -Dm644 "$SCRIPT_DIR/systemd/rollbackx-cmdline.service" \
     /lib/systemd/system/rollbackx-cmdline.service
 install -Dm644 "$SCRIPT_DIR/systemd/rollbackx-restore.service" \
     /lib/systemd/system/rollbackx-restore.service
+install -Dm644 "$SCRIPT_DIR/systemd/rollbackx-auto-restore.service" \
+    /lib/systemd/system/rollbackx-auto-restore.service
+install -Dm644 "$SCRIPT_DIR/systemd/rollbackx-schedule.service" \
+    /lib/systemd/system/rollbackx-schedule.service
+install -Dm644 "$SCRIPT_DIR/systemd/rollbackx-schedule.timer" \
+    /lib/systemd/system/rollbackx-schedule.timer
 
 systemctl daemon-reload
 systemctl enable rollbackx-cmdline.service

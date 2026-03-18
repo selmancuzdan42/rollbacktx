@@ -45,8 +45,20 @@ install: release
 		$(DESTDIR)/etc/xdg/autostart/rollbackx-gtk.desktop
 	install -Dm755 packaging/systemd/cmdline-restore.sh \
 		$(DESTDIR)/usr/lib/rollbackx/cmdline-restore.sh
+	install -Dm755 packaging/systemd/do-restore.sh \
+		$(DESTDIR)/usr/lib/rollbackx/do-restore.sh
+	install -Dm755 packaging/systemd/auto-restore.sh \
+		$(DESTDIR)/usr/lib/rollbackx/auto-restore.sh
 	install -Dm644 packaging/systemd/rollbackx-cmdline.service \
 		$(DESTDIR)/lib/systemd/system/rollbackx-cmdline.service
+	install -Dm644 packaging/systemd/rollbackx-restore.service \
+		$(DESTDIR)/lib/systemd/system/rollbackx-restore.service
+	install -Dm644 packaging/systemd/rollbackx-auto-restore.service \
+		$(DESTDIR)/lib/systemd/system/rollbackx-auto-restore.service
+	install -Dm644 packaging/systemd/rollbackx-schedule.service \
+		$(DESTDIR)/lib/systemd/system/rollbackx-schedule.service
+	install -Dm644 packaging/systemd/rollbackx-schedule.timer \
+		$(DESTDIR)/lib/systemd/system/rollbackx-schedule.timer
 	mkdir -p $(DESTDIR)/var/lib/rollbackx
 	chmod 755 $(DESTDIR)/var/lib/rollbackx
 	systemctl daemon-reload 2>/dev/null || true
@@ -106,6 +118,7 @@ deb:
 	# Restore scriptleri
 	install -m755 packaging/systemd/do-restore.sh      $(DEB_STAGEDIR)/usr/lib/rollbackx/do-restore.sh
 	install -m755 packaging/systemd/cmdline-restore.sh $(DEB_STAGEDIR)/usr/lib/rollbackx/cmdline-restore.sh
+	install -m755 packaging/systemd/auto-restore.sh    $(DEB_STAGEDIR)/usr/lib/rollbackx/auto-restore.sh
 
 	# GRUB script
 	install -m755 packaging/grub.d/80_rollbackx $(DEB_STAGEDIR)/etc/grub.d/80_rollbackx
@@ -113,8 +126,9 @@ deb:
 	# Systemd servisleri
 	install -m644 packaging/systemd/rollbackx-restore.service  $(DEB_STAGEDIR)/lib/systemd/system/rollbackx-restore.service
 	install -m644 packaging/systemd/rollbackx-cmdline.service  $(DEB_STAGEDIR)/lib/systemd/system/rollbackx-cmdline.service
-	install -m644 packaging/systemd/rollbackx-schedule.service $(DEB_STAGEDIR)/lib/systemd/system/rollbackx-schedule.service
-	install -m644 packaging/systemd/rollbackx-schedule.timer   $(DEB_STAGEDIR)/lib/systemd/system/rollbackx-schedule.timer
+	install -m644 packaging/systemd/rollbackx-schedule.service      $(DEB_STAGEDIR)/lib/systemd/system/rollbackx-schedule.service
+	install -m644 packaging/systemd/rollbackx-schedule.timer        $(DEB_STAGEDIR)/lib/systemd/system/rollbackx-schedule.timer
+	install -m644 packaging/systemd/rollbackx-auto-restore.service $(DEB_STAGEDIR)/lib/systemd/system/rollbackx-auto-restore.service
 
 	# Masaüstü entegrasyonu
 	install -m644 packaging/rollbackx.desktop               $(DEB_STAGEDIR)/usr/share/applications/rollbackx.desktop

@@ -4,7 +4,7 @@ Section: admin
 Priority: optional
 Architecture: amd64
 Maintainer: Selman F. CÜZDAN <selmanfarisicuzdan@gmail.com>
-Homepage: https://github.com/rollbackx/rollbackx
+Homepage: https://github.com/selmancuzdan42/rollbacktx
 Depends: grub-common, rsync
 Recommends: btrfs-progs (>= 5.0) | lvm2, libgtk-4-1, libadwaita-1-0, libayatana-appindicator3-1
 Description: Pardus Linux sistem anlık görüntüsü yöneticisi
