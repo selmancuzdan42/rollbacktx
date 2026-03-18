@@ -6,7 +6,7 @@ PREFIX        ?= /usr/local
 DESTDIR       ?=
 
 # .deb paket ayarları
-DEB_VERSION   := 1.0.0
+DEB_VERSION   := 1.0.1
 DEB_ARCH      := amd64
 DEB_PKGNAME   := rollbackx_$(DEB_VERSION)_$(DEB_ARCH)
 DEB_STAGEDIR  := /tmp/$(DEB_PKGNAME)
@@ -39,6 +39,8 @@ install: release
 		$(DESTDIR)/usr/share/polkit-1/actions/org.rollbackx.policy
 	install -Dm644 packaging/rollbackx.desktop \
 		$(DESTDIR)/usr/share/applications/rollbackx.desktop
+	install -Dm644 packaging/icons/rollbackx.svg \
+		$(DESTDIR)/usr/share/icons/hicolor/scalable/apps/rollbackx.svg
 	install -Dm644 packaging/rollbackx-gtk-autostart.desktop \
 		$(DESTDIR)/etc/xdg/autostart/rollbackx-gtk.desktop
 	install -Dm755 packaging/systemd/cmdline-restore.sh \
@@ -61,6 +63,7 @@ uninstall:
 	rm -f $(DESTDIR)/usr/share/polkit-1/actions/org.rollbackx.policy
 	rm -f $(DESTDIR)/usr/share/applications/rollbackx.desktop
 	rm -f $(DESTDIR)/etc/xdg/autostart/rollbackx-gtk.desktop
+	rm -f $(DESTDIR)/usr/share/icons/hicolor/scalable/apps/rollbackx.svg
 	rm -f $(DESTDIR)/usr/lib/rollbackx/cmdline-restore.sh
 	rm -f $(DESTDIR)/lib/systemd/system/rollbackx-cmdline.service
 	systemctl disable rollbackx-cmdline.service 2>/dev/null || true
@@ -117,6 +120,10 @@ deb:
 	install -m644 packaging/rollbackx.desktop               $(DEB_STAGEDIR)/usr/share/applications/rollbackx.desktop
 	install -m644 packaging/rollbackx-gtk-autostart.desktop $(DEB_STAGEDIR)/etc/xdg/autostart/rollbackx-gtk.desktop
 	install -m644 packaging/polkit/org.rollbackx.policy     $(DEB_STAGEDIR)/usr/share/polkit-1/actions/org.rollbackx.policy
+
+	# Uygulama ikonu
+	mkdir -p $(DEB_STAGEDIR)/usr/share/icons/hicolor/scalable/apps
+	install -m644 packaging/icons/rollbackx.svg $(DEB_STAGEDIR)/usr/share/icons/hicolor/scalable/apps/rollbackx.svg
 
 	# DEBIAN metadata
 	install -m644 packaging/debian/control  $(DEB_STAGEDIR)/DEBIAN/control

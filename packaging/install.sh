@@ -35,6 +35,10 @@ install -Dm644 "$SCRIPT_DIR/polkit/org.rollbackx.policy" \
 install -Dm644 "$SCRIPT_DIR/rollbackx.desktop" \
     /usr/share/applications/rollbackx.desktop
 
+# Uygulama ikonu
+install -Dm644 "$SCRIPT_DIR/icons/rollbackx.svg" \
+    /usr/share/icons/hicolor/scalable/apps/rollbackx.svg
+
 # Systemd servisleri
 mkdir -p /usr/lib/rollbackx
 install -Dm755 "$SCRIPT_DIR/systemd/cmdline-restore.sh" \

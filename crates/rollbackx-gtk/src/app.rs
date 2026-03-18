@@ -167,7 +167,7 @@ pub fn build_ui(
     } else {
         "Henüz geri yüklenebilir snapshot bulunmuyor. Öğretmeninizden snapshot oluşturmasını isteyin."
     }));
-    empty_page.set_icon_name(Some("camera-photo-symbolic"));
+    empty_page.set_icon_name(Some("rollbackx"));
 
     let stack = gtk4::Stack::new();
     stack.set_transition_type(gtk4::StackTransitionType::Crossfade);
@@ -719,7 +719,7 @@ pub fn build_ui(
         std::mem::forget(app.hold());
         let _ = std::process::Command::new("notify-send")
             .args([
-                "--icon=camera-photo-symbolic",
+                "--icon=rollbackx",
                 "RollbackX",
                 "Arka planda çalışıyor.\nSistem tepsisinden yönetebilirsiniz.",
             ])

@@ -24,7 +24,7 @@ impl Tray for RollbackxTray {
     }
 
     fn icon_name(&self) -> String {
-        "camera-photo-symbolic".into()
+        "rollbackx".into()
     }
 
     fn title(&self) -> String {
@@ -33,7 +33,7 @@ impl Tray for RollbackxTray {
 
     fn tool_tip(&self) -> ksni::ToolTip {
         ksni::ToolTip {
-            icon_name: "camera-photo-symbolic".into(),
+            icon_name: "rollbackx".into(),
             icon_pixmap: vec![],
             title: "RollbackX".into(),
             description: "Sistem anlık görüntüsü yöneticisi".into(),
