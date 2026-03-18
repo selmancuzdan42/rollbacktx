@@ -214,8 +214,9 @@ pub fn build_ui(
     // ── Overflow menü (⋮) — Düzenle + Doğrula ────────────────────────────────
     let pop_duzenle = gtk4::Button::builder().label("Düzenle").halign(gtk4::Align::Fill).build();
     let pop_dogrula = gtk4::Button::builder().label("Doğrula").halign(gtk4::Align::Fill).build();
+    let pop_dosya_yukle = gtk4::Button::builder().label("Dosya Geri Yükle").halign(gtk4::Align::Fill).build();
 
-    for b in [&pop_duzenle, &pop_dogrula] {
+    for b in [&pop_duzenle, &pop_dogrula, &pop_dosya_yukle] {
         b.add_css_class("flat");
     }
 
@@ -226,6 +227,7 @@ pub fn build_ui(
     pop_box.set_margin_end(4);
     pop_box.append(&pop_duzenle);
     pop_box.append(&pop_dogrula);
+    pop_box.append(&pop_dosya_yukle);
 
     let popover = gtk4::Popover::new();
     popover.set_child(Some(&pop_box));
@@ -562,6 +564,21 @@ pub fn build_ui(
             if let Some(id) = selected_id.get() {
                 let w = win.clone().upcast::<gtk4::Window>();
                 dialogs::show_verify_dialog(w, id);
+            }
+        }
+    });
+
+    pop_dosya_yukle.connect_clicked({
+        let win         = win.clone();
+        let selected_id = selected_id.clone();
+        let popover     = popover.clone();
+        let load_fn     = load_fn.clone();
+        move |_| {
+            popover.popdown();
+            if let Some(id) = selected_id.get() {
+                let w = win.clone().upcast::<gtk4::Window>();
+                let l = load_fn.clone();
+                dialogs::show_file_restore_dialog(w, id, move || l());
             }
         }
     });

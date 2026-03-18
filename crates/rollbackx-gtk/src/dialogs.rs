@@ -1354,3 +1354,144 @@ pub fn show_verify_dialog(parent: gtk4::Window, id: u32) {
         },
     );
 }
+
+// ── Dosya Geri Yükle ────────────────────────────────────────────────────────
+
+/// Snapshot'ı mount edip dosya seçtirip geri yükleyen dialog.
+pub fn show_file_restore_dialog(parent: gtk4::Window, id: u32, on_done: impl Fn() + 'static) {
+    let on_done = Rc::new(on_done);
+
+    // Önce snapshot'ı mount et
+    let args = vec!["snapshot".to_string(), "bagla".to_string(), id.to_string()];
+    let on_done_c = on_done.clone();
+    run_with_progress(
+        parent.clone(),
+        "Snapshot bağlanıyor...",
+        args,
+        move || {},
+        move |result, win| {
+            match result {
+                Err(e) => {
+                    // "zaten bağlı" hatasını yut
+                    if !e.contains("zaten") {
+                        show_result_dialog(win, "Hata", &format!("Snapshot bağlanamadı:\n{e}"), true);
+                        return;
+                    }
+                }
+                Ok(_) => {}
+            }
+
+            // Mount başarılı — dosya seçici aç
+            let mount_path = format!("/mnt/rollbackx/{id}");
+            let file_dialog = gtk4::FileDialog::new();
+            file_dialog.set_title("Geri yüklenecek dosya/klasör seçin");
+            file_dialog.set_modal(true);
+            let initial = gtk4::gio::File::for_path(&mount_path);
+            file_dialog.set_initial_folder(Some(&initial));
+
+            let win_c = win.clone();
+            let on_done_inner = on_done_c.clone();
+            file_dialog.select_multiple_folders(Some(win), gtk4::gio::Cancellable::NONE, move |result| {
+                match result {
+                    Err(_) => {
+                        // Kullanıcı iptal etti — dosya seçmeyi de dene
+                        let file_dialog2 = gtk4::FileDialog::new();
+                        file_dialog2.set_title("Geri yüklenecek dosyaları seçin");
+                        file_dialog2.set_modal(true);
+                        let initial2 = gtk4::gio::File::for_path(&format!("/mnt/rollbackx/{id}"));
+                        file_dialog2.set_initial_folder(Some(&initial2));
+                        let win_c2 = win_c.clone();
+                        let mount_path2 = format!("/mnt/rollbackx/{id}");
+                        let on_done_2 = on_done_inner.clone();
+                        file_dialog2.open_multiple(Some(&win_c), gtk4::gio::Cancellable::NONE, move |result| {
+                            match result {
+                                Err(_) => {} // Kullanıcı iptal etti
+                                Ok(files) => {
+                                    let yollar = files_to_restore_paths(&files, &mount_path2);
+                                    if !yollar.is_empty() {
+                                        do_file_restore(win_c2, id, yollar, on_done_2);
+                                    }
+                                }
+                            }
+                        });
+                    }
+                    Ok(folders) => {
+                        let yollar = files_to_restore_paths(&folders, &mount_path);
+                        if !yollar.is_empty() {
+                            do_file_restore(win_c, id, yollar, on_done_inner);
+                        }
+                    }
+                }
+            });
+        },
+    );
+}
+
+fn files_to_restore_paths(files: &gtk4::gio::ListModel, mount_prefix: &str) -> Vec<String> {
+    let mut yollar = Vec::new();
+    for i in 0..files.n_items() {
+        if let Some(obj) = files.item(i) {
+            if let Some(file) = obj.downcast_ref::<gtk4::gio::File>() {
+                if let Some(path) = file.path() {
+                    let path_str = path.to_string_lossy().to_string();
+                    // /mnt/rollbackx/{id}/etc/fstab → /etc/fstab
+                    if let Some(rest) = path_str.strip_prefix(mount_prefix) {
+                        if !rest.is_empty() {
+                            yollar.push(rest.to_string());
+                        }
+                    }
+                }
+            }
+        }
+    }
+    yollar
+}
+
+fn do_file_restore(parent: gtk4::Window, id: u32, yollar: Vec<String>, on_done: Rc<dyn Fn()>) {
+    let mut args = vec![
+        "snapshot".to_string(),
+        "dosya-yukle".to_string(),
+        id.to_string(),
+    ];
+    args.extend(yollar.iter().cloned());
+
+    let yol_listesi = yollar.join("\n• ");
+
+    // Onay dialogu
+    let dialog = libadwaita::AlertDialog::new(
+        Some("Dosya Geri Yükle"),
+        Some(&format!(
+            "Seçilen {} dosya/klasör snapshot #{id}'den geri yüklenecek:\n\n• {}\n\nMevcut dosyalar üzerine yazılacak. Devam edilsin mi?",
+            yollar.len(),
+            yol_listesi
+        )),
+    );
+    dialog.add_responses(&[("iptal", "İptal"), ("yukle", "Geri Yükle")]);
+    dialog.set_response_appearance("yukle", libadwaita::ResponseAppearance::Suggested);
+    dialog.set_default_response(Some("iptal"));
+
+    let parent_c = parent.clone();
+    dialog.connect_response(None, move |dlg, response| {
+        dlg.close();
+        if response != "yukle" {
+            return;
+        }
+        let on_done_c = on_done.clone();
+        run_with_progress(
+            parent_c.clone(),
+            "Dosyalar geri yükleniyor...",
+            args.clone(),
+            move || { on_done_c(); },
+            |result, win| match result {
+                Ok(msg) => {
+                    show_toast("Dosyalar geri yüklendi.");
+                    if !msg.trim().is_empty() {
+                        show_result_dialog(win, "Sonuç", &msg, false);
+                    }
+                }
+                Err(e) => show_result_dialog(win, "Hata", &e, true),
+            },
+        );
+    });
+    dialog.present(Some(&parent));
+}

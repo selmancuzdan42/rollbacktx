@@ -97,6 +97,15 @@ pub enum SnapKomut {
         #[arg(long = "aciklama", short = 'a')]
         aciklama: Option<String>,
     },
+    /// Snapshot'tan seçili dosya/klasörleri geri yükle
+    #[command(name = "dosya-yukle")]
+    DosyaYukle {
+        /// Kaynak snapshot ID'si
+        id: u32,
+        /// Geri yüklenecek dosya/klasör yolları (mutlak yol)
+        #[arg(required = true, num_args = 1..)]
+        yollar: Vec<String>,
+    },
 }
 
 pub fn calistir(komut: SnapKomut) -> Result<()> {
@@ -112,6 +121,7 @@ pub fn calistir(komut: SnapKomut) -> Result<()> {
         SnapKomut::KilitAc { id }                     => kilit_ac(id),
         SnapKomut::Dogrula { id }                     => dogrula(id),
         SnapKomut::YenidenAdlandir { id, isim, aciklama } => yeniden_adlandir(id, isim, aciklama),
+        SnapKomut::DosyaYukle { id, yollar }              => dosya_yukle(id, yollar),
     }
 }
 
@@ -382,6 +392,94 @@ fn yeniden_adlandir(id: u32, isim: String, aciklama: Option<String>) -> Result<(
     let eski_isim = db.get(id)?.name.clone();
     db.rename(id, isim.clone(), aciklama)?;
     output::basari(&format!("Snapshot #{id} yeniden adlandırıldı: \"{eski_isim}\" → \"{isim}\""));
+    Ok(())
+}
+
+fn dosya_yukle(id: u32, yollar: Vec<String>) -> Result<()> {
+    root_kontrol()?;
+    cleanup_stale_mount_points();
+
+    let db = SnapshotDB::open(None)?;
+    let snap = db.get(id)?;
+
+    // Yolları doğrula — mutlak olmalı
+    for yol in &yollar {
+        if !yol.starts_with('/') {
+            return Err(RollbackError::InvalidInput(format!(
+                "Yol mutlak olmalı (/ ile başlamalı): {yol}"
+            )));
+        }
+    }
+
+    // Snapshot'ı mount et (zaten bağlıysa tekrar bağlamaz)
+    let mp = snapshot_mount_point(id);
+    let biz_bagladik = if !is_snapshot_mounted(&mp) {
+        let backend = detect_backend()?;
+        backend.mount(snap, &mp)?;
+        true
+    } else {
+        false
+    };
+
+    let mut basarili = 0u32;
+    let mut basarisiz = 0u32;
+
+    for yol in &yollar {
+        let kaynak = mp.join(yol.trim_start_matches('/'));
+        let hedef = std::path::Path::new(yol);
+
+        if !kaynak.exists() {
+            output::uyari(&format!("Bulunamadı: {yol}"));
+            basarisiz += 1;
+            continue;
+        }
+
+        // Hedef dizini oluştur
+        if let Some(parent) = hedef.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+
+        // Dosya mı klasör mü?
+        let sonuc = if kaynak.is_dir() {
+            std::process::Command::new("rsync")
+                .args(["-aHAXx", "--delete"])
+                .arg(format!("{}/", kaynak.display()))
+                .arg(format!("{}/", hedef.display()))
+                .output()
+        } else {
+            std::process::Command::new("cp")
+                .args(["-a"])
+                .arg(&kaynak)
+                .arg(hedef)
+                .output()
+        };
+
+        match sonuc {
+            Ok(out) if out.status.success() => {
+                output::basari(&format!("Geri yüklendi: {yol}"));
+                basarili += 1;
+            }
+            Ok(out) => {
+                let hata = String::from_utf8_lossy(&out.stderr);
+                output::uyari(&format!("Başarısız: {yol} — {}", hata.trim()));
+                basarisiz += 1;
+            }
+            Err(e) => {
+                output::uyari(&format!("Başarısız: {yol} — {e}"));
+                basarisiz += 1;
+            }
+        }
+    }
+
+    // Biz bağladıysak ayır
+    if biz_bagladik {
+        let _ = unmount_snapshot(&mp);
+    }
+
+    output::bilgi(&format!(
+        "Toplam: {} başarılı, {} başarısız",
+        basarili, basarisiz
+    ));
     Ok(())
 }
 
