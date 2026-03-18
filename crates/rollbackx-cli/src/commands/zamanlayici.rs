@@ -115,9 +115,39 @@ fn kur(
     };
 
     schedule.kaydet()?;
+
+    // Systemd timer'ı kullanıcının seçtiği saate güncelle
+    timer_saatini_guncelle(saat);
+
     basari(&format!("Zamanlayıcı kuruldu: {}", schedule.acikla()));
     bilgi("Systemd timer aktif: rollbackx-schedule.timer");
     Ok(())
+}
+
+/// Systemd timer'ın OnCalendar saatini günceller.
+/// `/etc/systemd/system/rollbackx-schedule.timer.d/override.conf` dosyasına yazar.
+fn timer_saatini_guncelle(saat: &str) {
+    let override_dir = "/etc/systemd/system/rollbackx-schedule.timer.d";
+    let override_path = format!("{override_dir}/override.conf");
+
+    if std::fs::create_dir_all(override_dir).is_err() {
+        return;
+    }
+
+    let icerik = format!(
+        "[Timer]\nOnCalendar=\nOnCalendar=*-*-* {saat}:00\n"
+    );
+    if std::fs::write(&override_path, icerik).is_err() {
+        return;
+    }
+
+    // daemon-reload + timer restart
+    let _ = std::process::Command::new("systemctl")
+        .args(["daemon-reload"])
+        .status();
+    let _ = std::process::Command::new("systemctl")
+        .args(["restart", "rollbackx-schedule.timer"])
+        .status();
 }
 
 // ── goster ────────────────────────────────────────────────────────────────────
@@ -143,6 +173,10 @@ fn goster() -> Result<()> {
 
 fn kaldir() -> Result<()> {
     Schedule::kaldir()?;
+    // Timer override'ı temizle
+    let _ = std::fs::remove_file("/etc/systemd/system/rollbackx-schedule.timer.d/override.conf");
+    let _ = std::fs::remove_dir("/etc/systemd/system/rollbackx-schedule.timer.d");
+    let _ = std::process::Command::new("systemctl").args(["daemon-reload"]).status();
     basari("Zamanlayıcı kaldırıldı.");
     Ok(())
 }
