@@ -47,5 +47,9 @@ rsync -aHAXx --delete \
     --exclude='/usr/share/icons/hicolor/scalable/apps/rollbackx.svg' \
     "$SNAP_PATH/" / >> "$LOG" 2>&1
 
-log "Otomatik geri yükleme tamamlandı. Boot devam ediyor."
+log "Otomatik geri yükleme tamamlandı."
+
+# GRUB menüsünü güncelle — yeni snapshot'lar görünsün
+update-grub >> "$LOG" 2>&1 || true
+log "GRUB güncellendi. Boot devam ediyor."
 # Reboot YOK — sistemin kalanı geri yüklenen dosyalarla boot etsin

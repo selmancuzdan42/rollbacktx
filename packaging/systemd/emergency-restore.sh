@@ -219,6 +219,11 @@ printf "\n\n"
 if [ $RESULT -eq 0 ] || [ $RESULT -eq 24 ]; then
     printf "   ${GREEN}✓ Geri yukleme basarili!${RESET}\n"
     log "Geri yukleme BASARILI."
+
+    # GRUB menusunu guncelle — yeni snapshot'lar gorunsun
+    printf "   ${DIM}GRUB menusu guncelleniyor...${RESET}\n"
+    update-grub >> "$LOG" 2>&1 || true
+    log "GRUB guncellendi."
 else
     printf "   ${YELLOW}⚠ rsync hata kodu: ${RESULT} — sistem yine de baslatiliyor.${RESET}\n"
     log "UYARI: rsync hata kodu: $RESULT"

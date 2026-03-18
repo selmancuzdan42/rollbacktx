@@ -50,6 +50,10 @@ rsync -aHAXx --delete \
 
 log "Restore tamamlandı."
 
+# GRUB menüsünü güncelle — yeni snapshot'lar görünsün
+update-grub >> "$LOG" 2>&1 || true
+log "GRUB güncellendi."
+
 # Marker'ı sil — bir daha çalışmasın
 rm -f "$PENDING"
 
