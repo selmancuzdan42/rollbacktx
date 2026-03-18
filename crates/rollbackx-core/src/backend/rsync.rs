@@ -156,6 +156,7 @@ impl SnapshotBackend for RsyncBackend {
         let stdout = child.stdout.take().unwrap();
         let mut reader = BufReader::new(stdout);
         let mut buf = Vec::with_capacity(256);
+        let mut last_pct: u8 = 0;
         loop {
             buf.clear();
             let mut byte = [0u8; 1];
@@ -184,9 +185,12 @@ impl SnapshotBackend for RsyncBackend {
                 .find(|s| s.ends_with('%'))
                 .and_then(|s| s.trim_end_matches('%').parse::<u8>().ok());
             if let Some(p) = pct {
-                // GTK tarafının okuyabileceği özel format
-                println!("PROGRESS:{p}");
-                let _ = std::io::stdout().flush();
+                // Sadece ileri gitsin — rsync geri gidebiliyor
+                if p >= last_pct {
+                    last_pct = p;
+                    println!("PROGRESS:{p}");
+                    let _ = std::io::stdout().flush();
+                }
             }
         }
 

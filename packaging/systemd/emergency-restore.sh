@@ -204,7 +204,7 @@ rsync -aHAXx --delete --info=progress2 --no-inc-recursive \
     --exclude='/usr/share/applications/rollbackx.desktop' \
     --exclude='/etc/xdg/autostart/rollbackx-gtk.desktop' \
     --exclude='/usr/share/icons/hicolor/scalable/apps/rollbackx.svg' \
-    "$SNAP_PATH/" / 2>>"$LOG" | while IFS= read -r line; do
+    "$SNAP_PATH/" / 2>>"$LOG" | tr '\r' '\n' | while IFS= read -r line; do
         # rsync --info=progress2 satirindan yuzdeyi cek
         pct=$(echo "$line" | sed -n 's/.*[[:space:]]\([0-9]*\)%.*/\1/p')
         if [ -n "$pct" ] && [ "$pct" -ge 0 ] 2>/dev/null && [ "$pct" -le 100 ] 2>/dev/null; then
@@ -220,12 +220,11 @@ if [ $RESULT -eq 0 ] || [ $RESULT -eq 24 ]; then
     printf "   ${GREEN}✓ Geri yukleme basarili!${RESET}\n"
     log "Geri yukleme BASARILI."
 
-    # GRUB guncellemeyi reboot sonrasina birak — emergency ortamda
-    # update-grub guvenilir calismaz. Bunun yerine postinst tetikleyecek
-    # veya kullanici GUI'den yeni snapshot alinca otomatik guncellenecek.
-    # Simdilik bir marker birak — ilk normal boot'ta guncelle.
-    echo "pending" > /var/lib/rollbackx/grub-update-pending 2>/dev/null || true
-    log "GRUB guncelleme reboot sonrasina ertelendi."
+    # GRUB menusunu guncelle — 80_rollbackx artik pure shell,
+    # python3/rollbackx binary gerektirmiyor, emergency ortamda da calisir.
+    printf "   ${DIM}GRUB menusu guncelleniyor...${RESET}\n"
+    update-grub >> "$LOG" 2>&1 || true
+    log "GRUB guncellendi."
 else
     printf "   ${YELLOW}⚠ rsync hata kodu: ${RESULT} — sistem yine de baslatiliyor.${RESET}\n"
     log "UYARI: rsync hata kodu: $RESULT"
