@@ -14,6 +14,15 @@ log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG"; }
 
 log "GRUB cmdline restore servisi başlatıldı."
 
+# Emergency restore sonrası ertelenmiş GRUB güncellemesi
+GRUB_PENDING="/var/lib/rollbackx/grub-update-pending"
+if [ -f "$GRUB_PENDING" ]; then
+    log "Ertelenmiş GRUB güncellemesi yapılıyor..."
+    update-grub >> "$LOG" 2>&1 || true
+    rm -f "$GRUB_PENDING"
+    log "GRUB güncellendi."
+fi
+
 # rollbackx.restore_id parametresini /proc/cmdline'dan çıkar
 RESTORE_ID=$(cat /proc/cmdline | tr ' ' '\n' | grep '^rollbackx\.restore_id=' | cut -d= -f2 | head -1)
 

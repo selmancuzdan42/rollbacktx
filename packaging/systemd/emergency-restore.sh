@@ -220,10 +220,12 @@ if [ $RESULT -eq 0 ] || [ $RESULT -eq 24 ]; then
     printf "   ${GREEN}✓ Geri yukleme basarili!${RESET}\n"
     log "Geri yukleme BASARILI."
 
-    # GRUB menusunu guncelle — yeni snapshot'lar gorunsun
-    printf "   ${DIM}GRUB menusu guncelleniyor...${RESET}\n"
-    update-grub >> "$LOG" 2>&1 || true
-    log "GRUB guncellendi."
+    # GRUB guncellemeyi reboot sonrasina birak — emergency ortamda
+    # update-grub guvenilir calismaz. Bunun yerine postinst tetikleyecek
+    # veya kullanici GUI'den yeni snapshot alinca otomatik guncellenecek.
+    # Simdilik bir marker birak — ilk normal boot'ta guncelle.
+    echo "pending" > /var/lib/rollbackx/grub-update-pending 2>/dev/null || true
+    log "GRUB guncelleme reboot sonrasina ertelendi."
 else
     printf "   ${YELLOW}⚠ rsync hata kodu: ${RESULT} — sistem yine de baslatiliyor.${RESET}\n"
     log "UYARI: rsync hata kodu: $RESULT"

@@ -1,15 +1,21 @@
 #!/bin/sh
 # /etc/grub.d/80_rollbackx — RollbackX snapshot boot menüsü
+# python3 ve rollbackx binary'sine bağımlılık YOK — doğrudan JSON okur.
 
-ROLLBACKX_BIN="/usr/bin/rollbackx"
-[ -x "$ROLLBACKX_BIN" ] || exit 0
+DB="/var/lib/rollbackx/snapshots.json"
+[ -f "$DB" ] || exit 0
+
+# Boş veya boş array kontrolü
+CONTENT=$(cat "$DB" 2>/dev/null)
+[ -z "$CONTENT" ] && exit 0
+[ "$CONTENT" = "[]" ] && exit 0
 
 # Mevcut kernel ve initrd'yi bul (en yenisi)
 KERNEL=$(ls /boot/vmlinuz-* 2>/dev/null | sort -V | tail -1)
 INITRD=$(ls /boot/initrd.img-* 2>/dev/null | sort -V | tail -1)
 [ -z "$KERNEL" ] && exit 0
 
-# Root FS UUID — birden fazla yöntem dene
+# Root FS UUID
 ROOT_UUID=""
 if command -v findmnt >/dev/null 2>&1; then
     ROOT_UUID=$(findmnt -n -o UUID / 2>/dev/null)
@@ -19,23 +25,43 @@ if [ -z "$ROOT_UUID" ] && command -v grub-probe >/dev/null 2>&1; then
 fi
 [ -z "$ROOT_UUID" ] && exit 0
 
-# Snapshot listesini al
-SNAPS=$("$ROLLBACKX_BIN" snapshot list --json 2>/dev/null)
-[ -z "$SNAPS" ] && exit 0
-[ "$SNAPS" = "[]" ] && exit 0
+# JSON'dan snapshot bilgilerini parse et (python3/jq'suz)
+# Pretty-printed JSON'dan id, name, created_at, backend alanlarını çek
+parse_snapshots() {
+    CUR_ID=""
+    CUR_NAME=""
+    CUR_DATE=""
+    CUR_BACKEND=""
 
-# Python3 ile parse et — alanları | ile ayır, boşluk sorunu yaşanmasın
-ENTRIES=$(echo "$SNAPS" | python3 -c "
-import json, sys
-data = json.load(sys.stdin)
-for s in data:
-    sid     = str(s['id'])
-    name    = s['name'].replace('|', '-')
-    date    = s.get('created_at','')[:16].replace('T',' ')
-    backend = s.get('backend','Rsync')
-    print('|'.join([sid, name, date, backend]))
-" 2>/dev/null)
+    while IFS= read -r line; do
+        case "$line" in
+            *'"id"'*)
+                CUR_ID=$(echo "$line" | sed 's/[^0-9]//g')
+                ;;
+            *'"name"'*)
+                CUR_NAME=$(echo "$line" | sed 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+                ;;
+            *'"created_at"'*)
+                CUR_DATE=$(echo "$line" | sed 's/.*"created_at"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/' | cut -c1-16 | tr 'T' ' ')
+                ;;
+            *'"backend"'*)
+                CUR_BACKEND=$(echo "$line" | sed 's/.*"backend"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+                ;;
+            *'}'*)
+                # Obje sonu — bu snapshot'ı yazdır
+                if [ -n "$CUR_ID" ] && [ -n "$CUR_NAME" ]; then
+                    echo "${CUR_ID}|${CUR_NAME}|${CUR_DATE}|${CUR_BACKEND}"
+                fi
+                CUR_ID=""
+                CUR_NAME=""
+                CUR_DATE=""
+                CUR_BACKEND=""
+                ;;
+        esac
+    done < "$DB"
+}
 
+ENTRIES=$(parse_snapshots)
 [ -z "$ENTRIES" ] && exit 0
 
 cat << 'GRUB_HEADER'
