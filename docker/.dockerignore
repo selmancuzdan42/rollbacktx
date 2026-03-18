@@ -1,5 +1,0 @@
-web/
-target/
-**/.git
-**/*.log
-**/node_modules
