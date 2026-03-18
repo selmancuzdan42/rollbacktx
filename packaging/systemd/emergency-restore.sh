@@ -9,6 +9,9 @@ mount -t proc proc /proc 2>/dev/null
 mount -t sysfs sysfs /sys 2>/dev/null
 mount -t devtmpfs devtmpfs /dev 2>/dev/null
 
+# Kernel console mesajlarini kapat (progress bar'i bozmasin)
+dmesg -n 1 2>/dev/null
+
 LOG="/var/log/rollbackx-restore.log"
 DB="/var/lib/rollbackx/snapshots.json"
 
@@ -98,6 +101,19 @@ if [ ! -d "$SNAP_PATH" ]; then
     exec /sbin/init
 fi
 
+# Kernel mesajlarini sustir ve ekrani tekrar temizle
+dmesg -n 1 2>/dev/null
+printf "$CLEAR"
+printf "\n"
+printf "${DIM}══════════════════════════════════════════════${RESET}\n"
+printf "\n"
+printf "   ${GREEN}██████${RESET}  ${WHITE}RollbackX Acil Geri Yukleme${RESET}\n"
+printf "   ${GREEN}██  ██${RESET}\n"
+printf "   ${GREEN}██████${RESET}  ${DIM}Sistem kurtarma modu${RESET}\n"
+printf "\n"
+printf "${DIM}══════════════════════════════════════════════${RESET}\n"
+printf "\n"
+printf "   ${CYAN}→${RESET} Snapshot ID: ${WHITE}#${RESTORE_ID}${RESET}\n"
 if [ -n "$SNAP_NAME" ]; then
     printf "   ${CYAN}→${RESET} Snapshot: ${WHITE}${SNAP_NAME}${RESET}\n"
 fi

@@ -1,6 +1,6 @@
 use chrono::Local;
 use std::fs;
-use std::io::{BufRead, BufReader, Read};
+use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
@@ -152,9 +152,33 @@ impl SnapshotBackend for RsyncBackend {
             s
         });
 
-        // stdout'u satır satır oku; yüzde bilgisini ana process'e ilet
+        // stdout'u byte byte oku; rsync --info=progress2 \r ile günceller
         let stdout = child.stdout.take().unwrap();
-        for line in BufReader::new(stdout).lines().map_while(|r| r.ok()) {
+        let mut reader = BufReader::new(stdout);
+        let mut buf = Vec::with_capacity(256);
+        loop {
+            buf.clear();
+            let mut byte = [0u8; 1];
+            loop {
+                match reader.read(&mut byte) {
+                    Ok(0) => break,               // EOF
+                    Ok(_) => {
+                        if byte[0] == b'\r' || byte[0] == b'\n' {
+                            break;                // satır/progress sonu
+                        }
+                        buf.push(byte[0]);
+                    }
+                    Err(_) => break,
+                }
+            }
+            if buf.is_empty() {
+                // EOF kontrolü
+                if reader.fill_buf().map_or(true, |b| b.is_empty()) {
+                    break;
+                }
+                continue;
+            }
+            let line = String::from_utf8_lossy(&buf);
             // rsync --info=progress2 çıktısı: "  1,234,567  45%  12.34MB/s ..."
             let pct = line.split_whitespace()
                 .find(|s| s.ends_with('%'))
@@ -162,6 +186,7 @@ impl SnapshotBackend for RsyncBackend {
             if let Some(p) = pct {
                 // GTK tarafının okuyabileceği özel format
                 println!("PROGRESS:{p}");
+                let _ = std::io::stdout().flush();
             }
         }
 
