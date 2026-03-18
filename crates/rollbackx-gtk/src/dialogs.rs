@@ -1360,103 +1360,130 @@ pub fn show_verify_dialog(parent: gtk4::Window, id: u32) {
 /// Snapshot'tan seçili dosya/klasörleri geri yüklemek için yol girişli dialog.
 pub fn show_file_restore_dialog(parent: gtk4::Window, id: u32, on_done: impl Fn() + 'static) {
     let on_done = Rc::new(on_done);
-
-    let dialog = libadwaita::Dialog::new();
-    dialog.set_title("Dosya Geri Yükle");
-    dialog.set_content_width(480);
-
-    let vbox = gtk4::Box::new(gtk4::Orientation::Vertical, 12);
-    vbox.set_margin_top(24);
-    vbox.set_margin_bottom(24);
-    vbox.set_margin_start(24);
-    vbox.set_margin_end(24);
-
-    let baslik = gtk4::Label::builder()
-        .label(&format!("Snapshot #{id}'den geri yüklenecek dosya/klasör yollarını girin"))
-        .wrap(true)
-        .xalign(0.0)
-        .build();
-
-    let aciklama = gtk4::Label::builder()
-        .label("Her satıra bir yol yazın (mutlak yol, / ile başlamalı)\nÖrnek:\n/etc/fstab\n/etc/nginx/\n/home/kullanici/.bashrc")
-        .wrap(true)
-        .xalign(0.0)
-        .css_classes(vec!["dim-label", "caption"])
-        .build();
-
-    let scrolled = gtk4::ScrolledWindow::new();
-    scrolled.set_min_content_height(150);
-    scrolled.set_vexpand(true);
-
-    let text_view = gtk4::TextView::new();
-    text_view.set_monospace(true);
-    text_view.set_wrap_mode(gtk4::WrapMode::WordChar);
-    text_view.set_top_margin(8);
-    text_view.set_bottom_margin(8);
-    text_view.set_left_margin(8);
-    text_view.set_right_margin(8);
-    scrolled.set_child(Some(&text_view));
-
-    let btn_box = gtk4::Box::new(gtk4::Orientation::Horizontal, 8);
-    btn_box.set_halign(gtk4::Align::End);
-
-    let btn_iptal = gtk4::Button::with_label("İptal");
-    let btn_yukle = gtk4::Button::with_label("Geri Yükle");
-    btn_yukle.add_css_class("suggested-action");
-
-    btn_box.append(&btn_iptal);
-    btn_box.append(&btn_yukle);
-
-    vbox.append(&baslik);
-    vbox.append(&aciklama);
-    vbox.append(&scrolled);
-    vbox.append(&btn_box);
-    dialog.set_child(Some(&vbox));
-
-    let dialog_c = dialog.clone();
-    btn_iptal.connect_clicked(move |_| { dialog_c.close(); });
-
-    let dialog_c = dialog.clone();
     let parent_c = parent.clone();
-    btn_yukle.connect_clicked(move |_| {
-        let buffer = text_view.buffer();
-        let text = buffer.text(&buffer.start_iter(), &buffer.end_iter(), false);
-        let yollar: Vec<String> = text.lines()
-            .map(|l| l.trim().to_string())
-            .filter(|l| !l.is_empty() && l.starts_with('/'))
-            .collect();
+    let mount_point = format!("/mnt/rollbackx/{id}");
 
-        if yollar.is_empty() {
-            show_toast("Geçerli yol girilmedi. Yollar / ile başlamalı.");
-            return;
-        }
-
-        dialog_c.close();
-
-        let mut args = vec![
-            "snapshot".to_string(),
-            "dosya-yukle".to_string(),
-            id.to_string(),
-        ];
-        args.extend(yollar.clone());
-
-        let on_done_c = on_done.clone();
-        run_with_progress(
-            parent_c.clone(),
-            "Dosyalar geri yükleniyor...",
-            args,
-            move || { on_done_c(); },
-            |result, win| match result {
-                Ok(msg) => {
-                    show_toast("Dosyalar geri yüklendi.");
-                    if !msg.trim().is_empty() {
-                        show_result_dialog(win, "Sonuç", &msg, false);
-                    }
-                }
-                Err(e) => show_result_dialog(win, "Hata", &e, true),
-            },
-        );
+    // 1) Snapshot'ı bağla + erişim ver
+    show_toast("Snapshot bağlanıyor...");
+    let mp = mount_point.clone();
+    std::thread::spawn(move || {
+        // pkexec rollbackx snapshot bagla <id>
+        let _ = std::process::Command::new("pkexec")
+            .args(["rollbackx", "snapshot", "bagla", &id.to_string()])
+            .output();
+        // Mount noktasını okunabilir yap
+        let _ = std::process::Command::new("pkexec")
+            .args(["chmod", "-R", "a+rX", &mp])
+            .output();
     });
 
-    dialog.present(Some(&parent));
+    // Mount işleminin bitmesini bekleyip FileDialog aç
+    let mount_point_c = mount_point.clone();
+    glib::timeout_add_local(std::time::Duration::from_millis(1500), move || {
+        let mp_path = std::path::Path::new(&mount_point_c);
+        if !mp_path.exists() {
+            show_toast("Snapshot bağlanamadı.");
+            return glib::ControlFlow::Break;
+        }
+
+        // 2) Kaynak dosyaları seç (snapshot içinden)
+        let file_dialog = gtk4::FileDialog::builder()
+            .title("Geri yüklenecek dosyaları seçin")
+            .initial_folder(&gio::File::for_path(mp_path))
+            .build();
+
+        let parent_cc = parent_c.clone();
+        let on_done_c = on_done.clone();
+        let mount_point_prefix = mount_point_c.clone();
+
+        file_dialog.open_multiple(Some(&parent_c), gio::Cancellable::NONE, move |result| {
+            let Ok(files) = result else { return };
+            let n = files.n_items();
+            if n == 0 { return; }
+
+            let mut secilen_yollar: Vec<String> = Vec::new();
+            for i in 0..n {
+                let Some(obj) = files.item(i) else { continue };
+                let file: gio::File = obj.downcast().unwrap();
+                let Some(path) = file.path() else { continue };
+                let path_str = path.to_string_lossy().to_string();
+                // Mount prefix'ini kaldır → orijinal yol
+                if let Some(stripped) = path_str.strip_prefix(&mount_point_prefix) {
+                    secilen_yollar.push(stripped.to_string());
+                }
+            }
+
+            if secilen_yollar.is_empty() {
+                show_toast("Geçerli dosya seçilmedi.");
+                return;
+            }
+
+            // 3) Hedef klasörü seç
+            let dest_dialog = gtk4::FileDialog::builder()
+                .title("Dosyaları nereye kaydetmek istiyorsunuz?")
+                .build();
+
+            dest_dialog.select_folder(Some(&parent_cc), gio::Cancellable::NONE, move |result| {
+                let Ok(folder) = result else { return };
+                let Some(dest_path) = folder.path() else { return };
+                let dest_str = dest_path.to_string_lossy().to_string();
+
+                // 4) pkexec ile dosyaları kopyala
+                //    rsync -aR ile relative path yapısını koruyarak kopyala
+                let mut args = vec![
+                    "rsync".to_string(),
+                    "-aR".to_string(),
+                ];
+                for yol in &secilen_yollar {
+                    // rsync -aR relative path: /mnt/rollbackx/1/./etc/fstab → hedef/etc/fstab
+                    let kaynak_rel = format!("{mount_point_prefix}/.{yol}");
+                    args.push(kaynak_rel);
+                }
+                args.push(dest_str.clone());
+
+                // pkexec rsync çalıştır
+                let on_done_cc = on_done_c.clone();
+                let secilen_c = secilen_yollar.clone();
+                let (tx, rx) = std::sync::mpsc::channel::<Result<String, String>>();
+                std::thread::spawn(move || {
+                    let out = std::process::Command::new("pkexec")
+                        .args(&args)
+                        .output();
+
+                    // Snapshot'ı ayır
+                    let _ = std::process::Command::new("pkexec")
+                        .args(["rollbackx", "snapshot", "ayir", &id.to_string()])
+                        .output();
+
+                    let sonuc = match out {
+                        Ok(o) if o.status.success() => Ok(String::new()),
+                        Ok(o) => Err(String::from_utf8_lossy(&o.stderr).to_string()),
+                        Err(e) => Err(e.to_string()),
+                    };
+                    let _ = tx.send(sonuc);
+                });
+
+                glib::timeout_add_local(std::time::Duration::from_millis(100), move || {
+                    match rx.try_recv() {
+                        Ok(Ok(_)) => {
+                            show_toast(&format!(
+                                "{} dosya → {} konumuna kopyalandı.",
+                                secilen_c.len(), dest_str
+                            ));
+                            on_done_cc();
+                            glib::ControlFlow::Break
+                        }
+                        Ok(Err(e)) => {
+                            show_toast(&format!("Kopyalama hatası: {e}"));
+                            on_done_cc();
+                            glib::ControlFlow::Break
+                        }
+                        Err(_) => glib::ControlFlow::Continue, // henüz bitmedi
+                    }
+                });
+            });
+        });
+
+        glib::ControlFlow::Break
+    });
 }
