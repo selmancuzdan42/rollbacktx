@@ -65,22 +65,46 @@ printf "   ${CYAN}→${RESET} Snapshot ID: ${WHITE}#${RESTORE_ID}${RESET}\n"
 log "Restore ID: $RESTORE_ID"
 
 # DB'den snapshot path ve adini bul (python3/jq'suz)
+# Pretty-printed JSON'dan parse: "id": N satırını bul,
+# sonraki satirlardan backend_ref ve name'i cek.
 SNAP_PATH=""
 SNAP_NAME=""
 if [ -f "$DB" ]; then
-    eval $(cat "$DB" | tr '{}' '\n' | while IFS= read -r line; do
-        case "$line" in
-            *"\"id\":"*"${RESTORE_ID}"*)
-                ref=$(echo "$line" | sed -n 's/.*"backend_ref"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
-                name=$(echo "$line" | sed -n 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
-                if [ -n "$ref" ]; then
-                    echo "SNAP_PATH=/var/lib/rollbackx/snapshots/$ref"
-                    echo "SNAP_NAME=$name"
-                fi
+    FOUND=0
+    while IFS= read -r line; do
+        if [ "$FOUND" = "0" ]; then
+            # "id": 2 veya "id": 2, formatini ara
+            case "$line" in
+                *"\"id\""*":"*)
+                    line_id=$(echo "$line" | sed 's/[^0-9]//g')
+                    if [ "$line_id" = "$RESTORE_ID" ]; then
+                        FOUND=1
+                    fi
+                    ;;
+            esac
+        else
+            # id bulunduktan sonra backend_ref ve name'i ara
+            case "$line" in
+                *"\"backend_ref\""*)
+                    SNAP_REF=$(echo "$line" | sed 's/.*"backend_ref"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+                    if [ -n "$SNAP_REF" ]; then
+                        SNAP_PATH="/var/lib/rollbackx/snapshots/$SNAP_REF"
+                    fi
+                    ;;
+                *"\"name\""*)
+                    SNAP_NAME=$(echo "$line" | sed 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+                    ;;
+                # Sonraki objeye gectik, dur
+                *"\"id\""*)
+                    break
+                    ;;
+            esac
+            # Ikisinide bulduysa dur
+            if [ -n "$SNAP_PATH" ] && [ -n "$SNAP_NAME" ]; then
                 break
-                ;;
-        esac
-    done)
+            fi
+        fi
+    done < "$DB"
 fi
 
 if [ -z "$SNAP_PATH" ]; then
