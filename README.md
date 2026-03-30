@@ -1,17 +1,21 @@
 # RollbackX
 
-**Pardus Linux için sistem durumu yöneticisi**
+**Pardus Linux için sistem durumu yöneticisi / System state manager for Pardus Linux**
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Rust](https://img.shields.io/badge/Rust-2021%20Edition-orange.svg)](https://www.rust-lang.org/)
 [![Pardus](https://img.shields.io/badge/Pardus-Linux-red.svg)](https://www.pardus.org.tr/)
 [![Release](https://img.shields.io/github/v/release/selmancuzdan42/rollbacktx)](https://github.com/selmancuzdan42/rollbacktx/releases/latest)
 
-RollbackX, Pardus ve diğer Debian tabanlı dağıtımlar için geliştirilmiş açık kaynaklı bir sistem durum yöneticisidir. Btrfs, LVM Thin ve Rsync depolama altyapılarını destekler; sistem yapılandırmasını otomatik algılayarak en uygun altyapıyı seçer.
+> 🇹🇷 [Türkçe](#türkçe) &nbsp;|&nbsp; 🇬🇧 [English](#english)
 
 ---
 
-## Kurulum
+## Türkçe
+
+RollbackX, Pardus ve diğer Debian tabanlı dağıtımlar için geliştirilmiş açık kaynaklı bir sistem durum yöneticisidir. Btrfs, LVM Thin ve Rsync depolama altyapılarını destekler; sistem yapılandırmasını otomatik algılayarak en uygun altyapıyı seçer.
+
+### Kurulum
 
 ```bash
 # 1. Paketi indir
@@ -23,9 +27,7 @@ sudo dpkg -i rollbackx_1.0.0_amd64.deb
 
 > Tüm sürümler için → [Releases](https://github.com/selmancuzdan42/rollbacktx/releases)
 
----
-
-## Özellikler
+### Özellikler
 
 - **Çok altyapı desteği** — Btrfs, LVM Thin Provisioning ve Rsync (ext4 dahil tüm dosya sistemleri)
 - **Otomatik altyapı seçimi** — Btrfs → LVM Thin → Rsync öncelik sırasıyla algılama
@@ -39,24 +41,22 @@ sudo dpkg -i rollbackx_1.0.0_amd64.deb
 - **systemd entegrasyonu** — Açılışta otomatik yükleme, zamanlanmış kayıt
 - **Kilit mekanizması** — Kritik kayıtların yanlışlıkla silinmesini önler
 
----
+### Ekran Görüntüleri
 
-## Ekran Görüntüleri
-
-### Ana Ekran
+#### Ana Ekran
 ![Ana Ekran](screenshots/01-ana-ekran.png)
 
-### Yeni Kayıt Oluşturma
+#### Yeni Kayıt Oluşturma
 <p align="center">
   <img src="screenshots/02-snapshot-olusturma-diyalogu.png" width="400" alt="Kayıt Oluşturma Diyaloğu"/>
   &nbsp;&nbsp;
   <img src="screenshots/03-snapshot-olusturuluyor.png" width="400" alt="Kayıt Oluşturuluyor"/>
 </p>
 
-### Kayıt Listesi
+#### Kayıt Listesi
 ![Kayıt Listesi](screenshots/05-snapshot-listesi.png)
 
-### Kayıt Detayı ve Geri Yükleme
+#### Kayıt Detayı ve Geri Yükleme
 <p align="center">
   <img src="screenshots/06-snapshot-detay.png" width="320" alt="Kayıt Detay Paneli"/>
   &nbsp;&nbsp;
@@ -65,14 +65,12 @@ sudo dpkg -i rollbackx_1.0.0_amd64.deb
   <img src="screenshots/04-kimlik-dogrulama.png" width="320" alt="pkexec Kimlik Doğrulama"/>
 </p>
 
-### Dosya Gezgini Entegrasyonu
+#### Dosya Gezgini Entegrasyonu
 ![Dosya Gezgini](screenshots/08-dosya-gezgini.png)
 
----
+### Kullanım
 
-## Kullanım
-
-### CLI
+#### CLI
 
 ```bash
 # Yeni kayıt oluştur
@@ -100,7 +98,7 @@ sudo rollbackx arsiv export 3 yedek.rxsnap
 ROLLBACKX_LANG=en rollbackx snapshot list
 ```
 
-### GTK Arayüzü
+#### GTK Arayüzü
 
 ```bash
 rollbackx-gtk
@@ -108,9 +106,7 @@ rollbackx-gtk
 
 Yönetici işlemleri otomatik olarak `pkexec` aracılığıyla yetkilendirilir; GTK uygulamasını root olarak çalıştırmaya gerek yoktur.
 
----
-
-## Mimari
+### Mimari
 
 Proje 4 Cargo crate'inden oluşan bir Rust workspace olarak yapılandırılmıştır:
 
@@ -123,7 +119,7 @@ rollbackx/
 └── tests/                  # Entegrasyon testleri (loop device)
 ```
 
-### Altyapı Öncelik Sırası
+#### Altyapı Öncelik Sırası
 
 | Öncelik | Altyapı | Konum | Gereksinim |
 |---------|---------|-------|------------|
@@ -131,7 +127,7 @@ rollbackx/
 | 2 | LVM Thin | LV: `rx_{id}_{name}` | LVM Thin pool, lvm2 |
 | 3 | Rsync | `/var/lib/rollbackx/snapshots/` | rsync (evrensel) |
 
-### Sistem Entegrasyonu
+#### Sistem Entegrasyonu
 
 | Bileşen | Açıklama |
 |---------|----------|
@@ -142,9 +138,7 @@ rollbackx/
 | `grub.d/80_rollbackx` | Kayıtları GRUB menüsüne ekler |
 | `polkit/org.rollbackx.policy` | pkexec yetkilendirme politikası |
 
----
-
-## Katkıda Bulunma
+### Katkıda Bulunma
 
 1. Bu repoyu fork edin
 2. Feature branch oluşturun (`git checkout -b ozellik/yeni-ozellik`)
@@ -152,15 +146,157 @@ rollbackx/
 4. Branch'i push edin (`git push origin ozellik/yeni-ozellik`)
 5. Pull Request açın
 
----
-
-## Lisans
+### Lisans
 
 Bu proje [GNU General Public License v3.0](LICENSE) ile lisanslanmıştır.
 
----
-
-## İletişim
+### İletişim
 
 **Geliştirici:** Selman F. CÜZDAN
+**GitHub:** [@selmancuzdan42](https://github.com/selmancuzdan42)
+
+---
+
+## English
+
+RollbackX is an open-source system state manager for Pardus and other Debian-based distributions. It supports Btrfs, LVM Thin, and Rsync storage backends, automatically detecting the system configuration and selecting the most appropriate backend.
+
+### Installation
+
+```bash
+# 1. Download the package
+wget https://github.com/selmancuzdan42/rollbacktx/releases/latest/download/rollbackx_1.0.0_amd64.deb
+
+# 2. Install
+sudo dpkg -i rollbackx_1.0.0_amd64.deb
+```
+
+> For all releases → [Releases](https://github.com/selmancuzdan42/rollbacktx/releases)
+
+### Features
+
+- **Multi-backend support** — Btrfs, LVM Thin Provisioning, and Rsync (all filesystems including ext4)
+- **Automatic backend detection** — Priority order: Btrfs → LVM Thin → Rsync
+- **APT integration** — Automatic snapshot before every `apt install/upgrade/remove`
+- **GRUB menu integration** — Boot directly from any saved snapshot
+- **GTK4 / libadwaita interface** — Modern, GNOME HIG-compliant desktop application
+- **CLI** — Turkish/English output (`ROLLBACKX_LANG=en`)
+- **Role-based access control** — Admin / Teacher / Student mode (for educational environments)
+- **Snapshot verification** — Integrity check of critical system files
+- **Export/import** — Archiving with `.rxsnap` format
+- **systemd integration** — Automatic restore on boot, scheduled snapshots
+- **Lock mechanism** — Prevents accidental deletion of critical snapshots
+
+### Screenshots
+
+#### Main Screen
+![Main Screen](screenshots/01-ana-ekran.png)
+
+#### Creating a New Snapshot
+<p align="center">
+  <img src="screenshots/02-snapshot-olusturma-diyalogu.png" width="400" alt="Snapshot Creation Dialog"/>
+  &nbsp;&nbsp;
+  <img src="screenshots/03-snapshot-olusturuluyor.png" width="400" alt="Snapshot in Progress"/>
+</p>
+
+#### Snapshot List
+![Snapshot List](screenshots/05-snapshot-listesi.png)
+
+#### Snapshot Detail and Restore
+<p align="center">
+  <img src="screenshots/06-snapshot-detay.png" width="320" alt="Snapshot Detail Panel"/>
+  &nbsp;&nbsp;
+  <img src="screenshots/07-geri-yukleme-onayi.png" width="320" alt="Restore Confirmation"/>
+  &nbsp;&nbsp;
+  <img src="screenshots/04-kimlik-dogrulama.png" width="320" alt="pkexec Authentication"/>
+</p>
+
+#### File Manager Integration
+![File Manager](screenshots/08-dosya-gezgini.png)
+
+### Usage
+
+#### CLI
+
+```bash
+# Create a new snapshot
+sudo rollbackx snapshot create "before-update"
+
+# List snapshots
+rollbackx snapshot list
+
+# Restore a snapshot (requires reboot)
+sudo rollbackx snapshot restore 3
+
+# System status
+rollbackx durum
+
+# System check
+rollbackx kontrol
+
+# Verify a snapshot
+sudo rollbackx snapshot verify 3
+
+# Export a snapshot
+sudo rollbackx arsiv export 3 backup.rxsnap
+
+# English output
+ROLLBACKX_LANG=en rollbackx snapshot list
+```
+
+#### GTK Interface
+
+```bash
+rollbackx-gtk
+```
+
+Administrative operations are automatically authorized via `pkexec`; there is no need to run the GTK application as root.
+
+### Architecture
+
+The project is structured as a Rust workspace consisting of 4 Cargo crates:
+
+```
+rollbackx/
+├── crates/
+│   ├── rollbackx-core      # Business logic: backends, DB, error types
+│   ├── rollbackx-cli       # CLI binary (clap v4)
+│   └── rollbackx-gtk       # GTK4/libadwaita desktop application
+└── tests/                  # Integration tests (loop device)
+```
+
+#### Backend Priority
+
+| Priority | Backend | Location | Requirement |
+|----------|---------|----------|-------------|
+| 1 | Btrfs | `/.snapshots/@{id}_{name}_{ts}` | Btrfs FS, btrfs-tools |
+| 2 | LVM Thin | LV: `rx_{id}_{name}` | LVM Thin pool, lvm2 |
+| 3 | Rsync | `/var/lib/rollbackx/snapshots/` | rsync (universal) |
+
+#### System Integration
+
+| Component | Description |
+|-----------|-------------|
+| `apt-hook/80rollbackx` | Automatic snapshot before every APT operation |
+| `rollbackx-restore.service` | Automatic restore on boot |
+| `rollbackx-cmdline.service` | Restore via GRUB kernel parameter |
+| `rollbackx-schedule.timer` | Periodic automatic snapshots |
+| `grub.d/80_rollbackx` | Adds snapshots to GRUB menu |
+| `polkit/org.rollbackx.policy` | pkexec authorization policy |
+
+### Contributing
+
+1. Fork this repository
+2. Create a feature branch (`git checkout -b feature/new-feature`)
+3. Commit your changes (`git commit -m 'feat: add new feature'`)
+4. Push the branch (`git push origin feature/new-feature`)
+5. Open a Pull Request
+
+### License
+
+This project is licensed under the [GNU General Public License v3.0](LICENSE).
+
+### Contact
+
+**Developer:** Selman F. CÜZDAN
 **GitHub:** [@selmancuzdan42](https://github.com/selmancuzdan42)
